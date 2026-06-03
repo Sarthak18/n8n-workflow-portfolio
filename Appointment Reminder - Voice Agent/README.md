@@ -27,19 +27,4 @@ This workflow automatically:
 - **Structured Data Handling:** Enforces JSON schema validation for consistent data extraction
 - **Extract structure fields from the event.**
 If a field is missing, return empty string "".
-Return any JSON that matches the required schema
-
-Payload:
-
-{
-  "from_number": "+17255255621",      
-  "to_number": "{{ extracted_phone }}", 
-  "retell_llm_dynamic_variables": { 
-    "name": "{{ extracted_name }}", 
-    "phone_number": "{{ extracted_phone }}", 
-    "Reason": "{{ extracted_reason }}", 
-    "start_time": "{{ extracted_start }}", 
-    "end_time": "{{ extracted_end }}"  
-  },
-  "override_agent_id": "agent_ee12183d6672dd534b57a2a094"
-} 
+Return any JSON that matches the required schema 
