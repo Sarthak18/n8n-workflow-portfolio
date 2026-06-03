@@ -1,0 +1,231 @@
+{
+  "name": "Appointment Reminder - Voice Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        -48
+      ],
+      "id": "478e12b9-32b4-4544-92c2-46bc97db5346",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "sarthkgpta@gmail.com",
+          "mode": "list",
+          "cachedResultName": "sarthkgpta@gmail.com"
+        },
+        "timeMax": "={{ $now.plus(24,'hours') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -256,
+        -48
+      ],
+      "id": "06d2ae34-0e7c-4afc-aebb-6585466e575b",
+      "name": "Get many events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "InYbQgE1jJoxrpXb",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Extract structure fields from the event.  \n\nIf a field is missing, return empty string \"\".  \n\nReturn any JSON that matches the required schema"
+            },
+            {
+              "content": "=Start Time:\n {{ $json.start.dateTime }}\nEnd Time:\n{{ $json.end.dateTime }}\nDescription:\n{{ $json.description }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"name\": {\n      \"type\": \"string\"\n    }, \n    \"email\":{\n      \"type\":\"string\"\n    },\n     \"phone_number\":{\n      \"type\":\"string\"\n    },\n     \"reason\":{\n      \"type\":\"string\"\n    },\n     \"start_time\":{\n      \"type\":\"string\"\n    },\n     \"end_time\":{\n      \"type\":\"string\"\n     },\n     \"description\":{\n      \"type\":\"string\"\n    }\n  },\n  \"required\":[\n    \"name\",\n    \"email\",\n    \"phone_number\",\n    \"reason\",\n    \"start_time\",\n    \"end_time\",\n    \"description\"\n  ],\n  \"additionalProperties\": false\n}"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -32,
+        -48
+      ],
+      "id": "d13e2224-fb46-47fc-a6ac-4b67c9c02cb2",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Mu8dewk9miiVVOh0",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "99b0e867-47c4-429a-9c47-8d2943e5d280",
+              "name": "Name",
+              "value": "={{ $json.output[0].content[0].text.name }}",
+              "type": "string"
+            },
+            {
+              "id": "0ec5916d-59c2-47ad-9aba-aca95c1a4472",
+              "name": "Email",
+              "value": "={{ $json.output[0].content[0].text.email }}",
+              "type": "string"
+            },
+            {
+              "id": "628dd0ca-3667-4e06-9403-3d1091e5c252",
+              "name": "Phone Number",
+              "value": "={{ $json.output[0].content[0].text.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "f6bd20a2-1e4e-4299-8712-75dfb546ef2b",
+              "name": "Reason",
+              "value": "={{ $json.output[0].content[0].text.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "96db6b30-7a16-40eb-a0a5-f21ed97ec265",
+              "name": "Start Time",
+              "value": "={{ $json.output[0].content[0].text.start_time }}",
+              "type": "string"
+            },
+            {
+              "id": "22d471b7-3da0-4edf-a76a-d8e0af9a2f6a",
+              "name": "End Time",
+              "value": "={{ $json.output[0].content[0].text.end_time }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        -48
+      ],
+      "id": "a717fad7-af07-4975-b217-59613cd75bf0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.retellai.com/v2/create-phone-call",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"from_number\": \"+17255255621\",\n\"to_number\": \"{{ $json[\"Phone Number\"] }}\",\n\"retell_llm_dynamic_variables\":{\n    \"name\":\"{{ $json.Name }}\",\n    \"phone_number\": \"{{ $json[\"Phone Number\"] }}\",\n \"Reason\": \"{{ $json.Reason }}\",\n\"start_time\": \"{{ $json[\"Start Time\"] }}\",\n\"end_time\": \"{{ $json[\"End Time\"] }}\"\n},\n\"override_agent_id\":\"agent_ee12183d6672dd534b57a2a094\"\n}\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        544,
+        -48
+      ],
+      "id": "9be9922f-8362-436e-b656-dc9099ee6f7c",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "m0kDeun51ejOikUg",
+          "name": "Custom Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "20a941ef-a975-4905-b0ee-402731748421",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "05d4eb04b4871765249632d540fd70a1e202f5e01e6abc1ddad8dac8052203c5"
+  },
+  "id": "yPRqkfLAn8nazb2H",
+  "tags": []
+}
