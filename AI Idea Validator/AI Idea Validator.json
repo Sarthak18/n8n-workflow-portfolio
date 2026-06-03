@@ -1,0 +1,126 @@
+{
+  "name": "AI Idea Validator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "idea-rater",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -272,
+        -16
+      ],
+      "id": "9caedb5b-665c-4ca7-ac0e-3742327870cc",
+      "name": "Webhook",
+      "webhookId": "3e409513-7539-4f51-856b-3a6487f2f7e0"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.idea }}",
+        "options": {
+          "systemMessage": "You are a product idea evaluator. Rate the ideas on a scale 1-10 and give 2 sentences of feedback.\nRespond in JSON format:{\"score\":number,\"feedback\":\"string\"}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -48,
+        -16
+      ],
+      "id": "94472a12-d3cd-4cf5-8484-0f93f85d8ef0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-6",
+          "cachedResultName": "Claude Sonnet 4.6"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [
+        32,
+        208
+      ],
+      "id": "6c7caacb-b10e-4af0-b4ff-7dbb06b1c3c0",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "R1bUtWZ0V2m47oh3",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        304,
+        -16
+      ],
+      "id": "f7e35abf-4b27-4b5c-86b4-96cc82fa3bb3",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5dc2ed77-4c7d-450f-bffa-673f79488df0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "05d4eb04b4871765249632d540fd70a1e202f5e01e6abc1ddad8dac8052203c5"
+  },
+  "id": "JYlJOXUAl9UPNw0M",
+  "tags": []
+}
